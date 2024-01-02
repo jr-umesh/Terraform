@@ -1,0 +1,57 @@
+#defining a provider
+provider "vsphere"{
+    user = "administrator@vcenter.lab"
+    password = "User@321."
+    vsphere_server = "10.253.253.121"
+    allow_unverified_ssl = true
+}
+
+data "vsphere_datacenter" "dc" {
+    name = "VMDB"
+}
+
+data "vsphere_datastore" "datastore" {
+    name = "SAN.15K.LUN01"
+    datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_resource_pool" "Pool" {
+    name = "TerraformTest"
+    datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_network" "network" {
+    name = "VM Network"
+    datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+# data "vsphere_compute_cluster" "cluster" {
+#   name = "Production-CL"
+#   datacenter_id = "${data.vsphere_datacenter.dc.id}"
+# }
+
+resource "vsphere_virtual_machine" "vm" {
+    name = "ubuntu-OS"
+    resource_pool_id = "${data.vsphere_resource_pool.Pool.id}"
+    datastore_id = "${data.vsphere_datastore.datastore.id}"
+    
+    num_cpus = 2
+    memory = 1024
+    guest_id = "ubuntuGuest64"
+
+    ignored_guest_ips = []
+
+    network_interface {
+      network_id = "${data.vsphere_network.network.id}"
+    }
+
+    disk {
+      label = "disk0"
+      size = 50
+    }
+
+    cdrom {
+      datastore_id = "$data.vsphere_datastore.datastore.id"
+      path = "ubuntu-22.04.2-desktop-amd64.iso"
+    }
+}
